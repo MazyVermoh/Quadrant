@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     strava_redirect_uri: HttpUrl | None = Field(default=None, env="STRAVA_REDIRECT_URI")
 
     ton_manifest_url: HttpUrl | None = Field(default=None, env="TON_MANIFEST_URL")
+    allowed_origins: tuple[str, ...] = Field(
+        default=("http://localhost:3000",), env="ALLOWED_ORIGINS"
+    )
+    log_level: str = Field(default="INFO", env="LOG_LEVEL")
     admin_telegram_ids: tuple[int, ...] = Field(
         default=(1350430976, 796891046), env="ADMIN_TELEGRAM_IDS"
     )
@@ -50,6 +54,23 @@ class Settings(BaseSettings):
             ids = [int(part) for part in cleaned if part]
             return tuple(ids)
         return tuple(value)
+
+    @field_validator("allowed_origins", mode="before")
+    @classmethod
+    def parse_allowed_origins(cls, value: Any) -> tuple[str, ...]:
+        if value in (None, "", ()):
+            return ()
+        if isinstance(value, str):
+            parts = [part.strip() for part in value.split(",")]
+            return tuple([part for part in parts if part])
+        if isinstance(value, (list, tuple)):
+            origins: list[str] = []
+            for item in value:
+                if item in (None, ""):
+                    continue
+                origins.append(str(item).strip())
+            return tuple([origin for origin in origins if origin])
+        return (str(value).strip(),)
 
     class Config:
         env_file = ".env"

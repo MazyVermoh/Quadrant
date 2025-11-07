@@ -12,6 +12,9 @@ web-build/
 dist/
 build/
 coverage/
+miniapp/.next/
+miniapp/out/
+miniapp/.turbo/
 
 # Native platform outputs
 ios/build/

@@ -1,41 +1,48 @@
 # Quadrant Backend
 
-FastAPI + PostgreSQL сервисная архитектура для мобильного приложения Quadrant.
+FastAPI service that powers the Telegram Mini App and mobile clients. It validates Telegram web-app signatures, issues Quadrant JWTs, and exposes all learning content via REST.
 
-## Стек
-- FastAPI / Uvicorn
-- PostgreSQL (asyncpg + SQLAlchemy 2.x)
-- Alembic миграции
-- Celery + Redis для фоновых задач (Strava/Notion sync, уведомления)
-- Pydantic Settings для конфигурации
+## Stack
+- FastAPI + Uvicorn
+- PostgreSQL (SQLAlchemy 2.x + asyncpg)
+- Alembic migrations
+- Redis + Celery for background jobs
+- Pydantic Settings for configuration management
 
-## Запуск (локально)
+## Environment
+Copy `.env.example` to `.env` and adjust the values:
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL DSN (`postgresql+asyncpg://user:pass@host:port/db`). |
+| `JWT_SECRET` | Symmetric key used to sign access/refresh tokens. |
+| `ALLOWED_ORIGINS` | Comma-separated list of trusted origins (e.g. `http://localhost:3000,https://miniapp.quadrant.example`). |
+| `TELEGRAM_BOT_TOKEN` | Bot token used to validate Mini App `initData` signatures. |
+| `LOG_LEVEL` | Logging level (e.g. `INFO`, `DEBUG`). |
+
+## Run locally
 ```bash
 poetry install
 poetry run uvicorn app.main:app --reload
 ```
+The server listens on port `8000` by default. Swagger docs are available at `/docs`.
 
-Перед запуском заполните `.env` (см. `app/core/config.py`) или переменные окружения:
-- `DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/quadrant`
-- `REDIS_URL=redis://localhost:6379/0`
-- `JWT_SECRET=...`
-- `TELEGRAM_BOT_TOKEN=...`
+## Key endpoints
+- `POST /api/v1/auth/telegram/miniapp` — validates the raw `initData`, upserts the user, and returns `{ access, refresh, user }`.
+- `POST /api/v1/auth/refresh` — accepts a refresh token and rotates the JWT pair.
+- `GET /healthz` — lightweight health probe for infrastructure checks.
 
-## Структура
+All routes are CORS-protected using the origins defined in `ALLOWED_ORIGINS`, with `Authorization`, `Content-Type`, and `X-Requested-With` headers enabled.
+
+## Project layout
 ```
 app/
-  api/          # Роутеры и зависимости
-  core/         # Конфиг, логирование, безопасность, база
-  models/       # SQLAlchemy модели
-  repositories/ # CRUD-слой
-  schemas/      # Pydantic DTO
-  services/     # Бизнес-логика
+  api/          # Routers and dependencies
+  core/         # Settings, security, database, telegram helpers
+  models/       # SQLAlchemy models (User, Course, Book, ...)
+  repositories/ # Data-access layer
+  schemas/      # Pydantic DTOs
+  services/     # Business logic
   integrations/ # Strava, TonConnect, Notion
-  tasks/        # Celery задачи
+  tasks/        # Celery tasks
 ```
-
-## Следующие шаги
-1. Настроить Alembic и описать первичные модели (User, Course, Book и т.д.).
-2. Реализовать Telegram OAuth-флоу и JWT-авторизацию.
-3. Поднять docker-compose c Postgres и Redis.
-4. Подключить Strava/Ton/Notion интеграции.
