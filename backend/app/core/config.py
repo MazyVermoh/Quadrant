@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     admin_telegram_ids: tuple[int, ...] = Field(
         default=(1350430976, 796891046), env="ADMIN_TELEGRAM_IDS"
     )
+    webapp_url: HttpUrl | None = Field(default=None, env="WEBAPP_URL")
+    bot_webhook_url: HttpUrl | None = Field(default=None, env="BOT_WEBHOOK_URL")
 
     @field_validator("admin_telegram_ids", mode="before")
     @classmethod
