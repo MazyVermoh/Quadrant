@@ -3,6 +3,7 @@ import logging
 from typing import Tuple
 
 from aiogram import Bot, Dispatcher, Router, types
+from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import Command, CommandStart
 from aiogram.types import (
@@ -118,7 +119,10 @@ async def main() -> None:
     if not settings.telegram_bot_token or settings.telegram_bot_token == "dummy":
         raise RuntimeError("TELEGRAM_BOT_TOKEN не задан")
 
-    bot = Bot(token=settings.telegram_bot_token, parse_mode=ParseMode.HTML)
+    bot = Bot(
+        token=settings.telegram_bot_token,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+    )
     dp = Dispatcher()
     dp.include_router(router)
 
